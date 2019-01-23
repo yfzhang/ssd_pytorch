@@ -1,5 +1,4 @@
 import torch
-import torchvision
 import torch.nn.functional as F
 import torchvision.transforms as transforms
 
@@ -8,15 +7,15 @@ from torch.autograd import Variable
 from ssd import SSD300
 from encoder import DataEncoder
 import cv2
-import PIL.Image as Image
 import time
 
+import metadata
 
 torch.utils.backcompat.keepdim_warning.enabled = True
 torch.utils.backcompat.broadcast_warning.enabled = True
 
-weight_file = 'weights/overfit.pth'
-vid_file = 'data/gascola_car_small.mp4'
+weight_file = 'weights/overfit_freezed.pth'
+vid_file = 'data/soccer_person_small.mp4'
 
 # load model
 net = SSD300()
@@ -47,14 +46,19 @@ while True:
     # print('boxes {}'.format(boxes))
     # print('labels {}'.format(labels))
     # print('scores {}'.format(scores))
-    print('detection took {} s'.format(time.time()-start))
+    print('detection took {} s'.format(time.time() - start))
 
     if boxes is not None:
         print('boxes {}'.format(boxes))
-        for box in boxes:
+        for box, label, score in zip(boxes, labels, scores):
             box[::2] *= img.shape[1]
             box[1::2] *= img.shape[0]
             box = box.int()
-            cv2.rectangle(img, (box[0], box[1]), (box[2], box[3]), (0, 255, 0), 3)
+            class_text = metadata.label2text_dict[label[0]]
+            prob_text = str(score[0])
+            top_left = (box[0], box[1])
+            bottom_right = (box[2], box[3])
+            cv2.rectangle(img, top_left, bottom_right, (0, 255, 0), 3)
+            cv2.putText(img, class_text + ' ' + prob_text, top_left, cv2.FONT_ITALIC, 1, (0, 0, 255), 1, cv2.LINE_AA)
     cv2.imshow("object_detection", img)
     cv2.waitKey(5)

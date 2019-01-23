@@ -1,12 +1,10 @@
 import os
 import time
-import argparse
 from tqdm import tqdm
 
 import torch
 import torch.optim as optim
 import torch.backends.cudnn as cudnn
-import torchvision
 import torchvision.transforms as transforms
 
 from ssd import SSD300
@@ -24,14 +22,14 @@ lr = 1e-3
 resume = False
 torch.utils.backcompat.keepdim_warning.enabled = True
 torch.utils.backcompat.broadcast_warning.enabled = True
-train_list = './utils/overfit.txt'
-val_list = './utils/overfit.txt'
-ckpt_name = 'overfit'
+train_list = './utils/train.txt'
+val_list = './utils/test.txt'
+ckpt_name = 'coco'
 
 transform = transforms.Compose([transforms.ToTensor(),
                                 transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))])
 train_set = ListDataset(list_file=train_list, train=True, transform=transform)
-train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=4)
+train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size, shuffle=False, num_workers=4)
 valid_set = ListDataset(list_file=val_list, train=False, transform=transform)
 valid_loader = torch.utils.data.DataLoader(valid_set, batch_size=batch_size, shuffle=False, num_workers=4)
 
@@ -45,13 +43,13 @@ if resume:
 else:
     net.load_state_dict(torch.load('./weights/ssd_initializedVGG.pth', map_location=lambda storage, loc: storage))
 
-# torch.cuda.set_device(0)
+torch.cuda.set_device(0)
 # net = torch.nn.DataParallel(net, device_ids=[0, 1, 2, 3, 4, 5, 6, 7])
 net.cuda()
 cudnn.benchmark = True
 
 criterion = MultiBoxLoss()
-optimizer = optim.SGD(net.parameters(), lr=lr, momentum=0.9, weight_decay=1e-4)
+optimizer = optim.SGD(net.gen_trainable_params(), lr=lr, momentum=0.9, weight_decay=1e-4)
 best_loss = float('inf')
 step = 0
 logger = Logger('./logs')

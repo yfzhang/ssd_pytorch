@@ -100,6 +100,11 @@ class SSD300(nn.Module):
         loc_preds, conf_preds = self.multibox(hs)
         return loc_preds, conf_preds
 
+    def gen_trainable_params(self):
+        for name, param in self.named_parameters():
+            if name.find('base') == -1:
+                yield param
+
 
 if __name__ == '__main__':
     torch.utils.backcompat.keepdim_warning.enabled = True

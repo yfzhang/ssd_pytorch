@@ -1,5 +1,4 @@
 import torch
-import torchvision
 import torch.nn.functional as F
 import torchvision.transforms as transforms
 
@@ -8,14 +7,15 @@ from torch.autograd import Variable
 from ssd import SSD300
 from encoder import DataEncoder
 from PIL import Image
-from PIL import ImageDraw
+
+import metadata
 
 torch.utils.backcompat.keepdim_warning.enabled = True
 torch.utils.backcompat.broadcast_warning.enabled = True
 
 # Load model
 net = SSD300()
-checkpoint = torch.load('weights/ssd3new.pth')
+checkpoint = torch.load('weights/overfit_freezed.pth')
 net.load_state_dict(checkpoint['net'])
 net.eval()
 
@@ -35,25 +35,20 @@ loc, conf = net(Variable(img1[None, :, :, :], volatile=True))
 data_encoder = DataEncoder()
 boxes, labels, scores = data_encoder.decode(loc.data.squeeze(0), F.softmax(conf.squeeze(0)).data)
 
-# print('boxes {}'.format(boxes))
-# print('labels {}'.format(labels))
-# print('scores {}'.format(scores))
-
-# draw = ImageDraw.Draw(img)
-# for box in boxes:
-#     box[::2] *= img.width
-#     box[1::2] *= img.height
-#     draw.rectangle(list(box), outline='red')
-# img.show()
-
 import cv2
 import numpy as np
+
 img = np.array(img.getdata(), np.uint8).reshape(img.size[1], img.size[0], 3)
 if boxes is not None:
-    for box in boxes:
+    for box, label, score in zip(boxes, labels, scores):
         box[::2] *= img.shape[1]
         box[1::2] *= img.shape[0]
         box = box.int()
-        cv2.rectangle(img, (box[0], box[1]), (box[2], box[3]), (0, 255, 0), 3)
+        class_text = metadata.label2text_dict[label[0]]
+        prob_text = str(score[0])
+        top_left = (box[0], box[1])
+        bottom_right = (box[2], box[3])
+        cv2.rectangle(img, top_left, bottom_right, (0, 255, 0), 3)
+        cv2.putText(img, class_text + ' ' + 'truck', top_left, cv2.FONT_ITALIC, 1, (0, 0, 255), 1, cv2.LINE_AA)
 cv2.imshow("object_detection", img)
 cv2.waitKey(-1)

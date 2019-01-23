@@ -7,10 +7,9 @@ from torch.autograd import Variable
 
 
 class MultiBoxLoss(nn.Module):
-    num_classes = 4
-
     def __init__(self):
         super(MultiBoxLoss, self).__init__()
+        self.num_classes = 4
 
     def cross_entropy_loss(self, x, y):
         '''
@@ -51,7 +50,7 @@ class MultiBoxLoss(nn.Module):
         return neg
 
     def forward(self, loc_preds, loc_targets, conf_preds, conf_targets):
-        '''Compute loss between (loc_preds, loc_targets) and (conf_preds, conf_targets).
+        """Compute loss between (loc_preds, loc_targets) and (conf_preds, conf_targets).
 
         Args:
           loc_preds: (tensor) predicted locations, sized [batch_size, 8732, 4].
@@ -61,13 +60,13 @@ class MultiBoxLoss(nn.Module):
 
         loss:
           (tensor) loss = SmoothL1Loss(loc_preds, loc_targets) + CrossEntropyLoss(conf_preds, conf_targets).
-        '''
+        """
         batch_size, num_boxes, _ = loc_preds.size()
 
         pos = conf_targets > 0  # [N,8732], pos means the box matched.
         num_matched_boxes = pos.data.long().sum()
         if num_matched_boxes == 0:
-            return Variable(torch.Tensor([0]))
+            return Variable(torch.Tensor([0.0]), requires_grad=True)
 
         ################################################################
         # loc_loss = SmoothL1Loss(pos_loc_preds, pos_loc_targets)
@@ -96,7 +95,7 @@ class MultiBoxLoss(nn.Module):
 
         loc_loss /= num_matched_boxes
         conf_loss /= num_matched_boxes
-        print('%f %f' % (loc_loss.data[0], conf_loss.data[0]), end=' ')
+        # print('%f %f' % (loc_loss.data[0], conf_loss.data[0]), end=' ')
         return loc_loss + conf_loss
 
 

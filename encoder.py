@@ -1,4 +1,4 @@
-'''Encode target locations and labels.'''
+"""Encode target locations and labels."""
 import torch
 
 import math
@@ -7,7 +7,7 @@ import itertools
 
 class DataEncoder:
     def __init__(self):
-        '''Compute default box sizes with scale and aspect transform.'''
+        """Compute default box sizes with scale and aspect transform."""
         scale = 300.
         steps = [s / scale for s in (8, 16, 32, 64, 100, 300)]
         sizes = [s / scale for s in (30, 60, 111, 162, 213, 264, 315)]
@@ -71,7 +71,7 @@ class DataEncoder:
         return iou
 
     def encode(self, boxes, classes, threshold=0.5):
-        '''Transform target bounding boxes and class labels to SSD boxes and classes.
+        """Transform target bounding boxes and class labels to SSD boxes and classes.
 
         Match each object box to all the default boxes, pick the ones with the
         Jaccard-Index > 0.5:
@@ -85,7 +85,7 @@ class DataEncoder:
         Returns:
           boxes: (tensor) bounding boxes, sized [#obj, 8732, 4].
           classes: (tensor) class labels, sized [8732,]
-        '''
+        """
         default_boxes = self.default_boxes
         num_default_boxes = default_boxes.size(0)
         num_objs = boxes.size(0)
@@ -112,7 +112,7 @@ class DataEncoder:
         return loc, conf
 
     def nms(self, bboxes, scores, threshold=0.5, mode='union'):
-        '''Non maximum suppression.
+        """Non maximum suppression.
 
         Args:
           bboxes: (tensor) bounding boxes, sized [N,4].
@@ -125,7 +125,7 @@ class DataEncoder:
 
         Ref:
           https://github.com/rbgirshick/py-faster-rcnn/blob/master/lib/nms/py_cpu_nms.py
-        '''
+        """
         x1 = bboxes[:, 0]
         y1 = bboxes[:, 1]
         x2 = bboxes[:, 2]
@@ -192,3 +192,4 @@ class DataEncoder:
 
 if __name__ == '__main__':
     encoder = DataEncoder()
+    print(encoder.default_boxes)

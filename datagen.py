@@ -1,36 +1,31 @@
-'''Load image/class/box from a annotation file.
+"""Load image/class/box from a annotation file.
 
 The annotation file is organized as:
     image_name #obj xmin ymin xmax ymax class_index ..
-'''
+"""
 from __future__ import print_function
 
 import os
-import sys
 import os.path
-
 import random
-import numpy as np
 
 import torch
 import torch.utils.data as data
-import torchvision.transforms as transforms
 
 from encoder import DataEncoder
-from PIL import Image, ImageOps
+from PIL import Image
 
 
 class ListDataset(data.Dataset):
-    img_size = 300
-
     def __init__(self, list_file, train, transform):
-        '''
+        """
         Args:
           root: (str) ditectory to images.
           list_file: (str) path to index file.
           train: (boolean) train or test.
           transform: ([transforms]) image transforms.
-        '''
+        """
+        self.img_size = 300
         self.root = '/data/datasets/yanfu/detection_data/imgs'
         self.train = train
         self.transform = transform
@@ -64,7 +59,7 @@ class ListDataset(data.Dataset):
             self.labels.append(torch.LongTensor(label))
 
     def __getitem__(self, idx):
-        '''Load a image, and encode its bbox locations and class labels.
+        """Load a image, and encode its bbox locations and class labels.
 
         Args:
           idx: (int) image index.
@@ -73,7 +68,7 @@ class ListDataset(data.Dataset):
           img: (tensor) image tensor.
           loc_target: (tensor) location targets, sized [8732,4].
           conf_target: (tensor) label targets, sized [8732,].
-        '''
+        """
         # Load image and bbox locations.
         fname = self.fnames[idx]
         img = Image.open(os.path.join(self.root, fname))
@@ -90,10 +85,16 @@ class ListDataset(data.Dataset):
         boxes /= torch.Tensor([w, h, w, h]).expand_as(boxes)
 
         img = img.resize((self.img_size, self.img_size))
+        # if the image is gray scale, force the channel number to be 3
+        if img.mode == 'L':
+            img = img.convert('RGB')
+        # print('-1\n {}'.format(img))
         img = self.transform(img)
 
         # Encode loc & conf targets.
         loc_target, conf_target = self.data_encoder.encode(boxes, labels)
+        # print(fname)
+        # print('0\n {}'.format(img))
         return img, loc_target, conf_target
 
     def random_flip(self, img, boxes):
